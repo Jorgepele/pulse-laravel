@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends ApiController
+{
+    // POST /api/register
+    public function register(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+
+        $user = User::create([
+            'name' => $data['email'],
+            'email' => $data['email'],
+            'password' => $data['password'], // hashed by the model cast
+        ]);
+
+        $token = $user->createToken('api')->plainTextToken;
+
+        return response()->json($this->userData($user, $token), 201);
+    }
+
+    // POST /api/login
+    public function login(Request $request)
+    {
+        $data = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = User::where('email', $data['email'])->first();
+
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid email or password'],
+            ]);
+        }
+
+        $token = $user->createToken('api')->plainTextToken;
+
+        return response()->json($this->userData($user, $token));
+    }
+
+    // GET /api/me
+    public function me(Request $request)
+    {
+        return response()->json($this->userData($request->user()));
+    }
+}
