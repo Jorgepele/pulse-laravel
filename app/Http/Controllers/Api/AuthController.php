@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -17,11 +19,23 @@ class AuthController extends ApiController
             'password' => ['required', 'string', 'min:8'],
         ]);
 
-        $user = User::create([
-            'name' => $data['email'],
-            'email' => $data['email'],
-            'password' => $data['password'], // hashed by the model cast
-        ]);
+        // Create the user together with a personal organization they own, so
+        // every account has a tenant to create boards under (multi-tenant core).
+        $user = DB::transaction(function () use ($data) {
+            $user = User::create([
+                'name' => $data['email'],
+                'email' => $data['email'],
+                'password' => $data['password'], // hashed by the model cast
+            ]);
+
+            $org = Organization::create([
+                'name' => $data['email']."'s workspace",
+                'owner_id' => $user->id,
+            ]);
+            $org->memberships()->create(['user_id' => $user->id, 'role' => 'owner']);
+
+            return $user;
+        });
 
         $token = $user->createToken('api')->plainTextToken;
 

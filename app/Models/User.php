@@ -18,6 +18,16 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    public function organizations()
+    {
+        return $this->belongsToMany(Organization::class, 'memberships');
+    }
+
+    public function memberships()
+    {
+        return $this->hasMany(Membership::class);
+    }
+
     /**
      * Get the attributes that should be cast.
      *

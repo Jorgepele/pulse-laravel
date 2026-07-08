@@ -8,9 +8,14 @@ use Illuminate\Support\Str;
 // A collection of feature requests. Port of the Django `Board` model.
 class Board extends Model
 {
-    protected $fillable = ['name', 'slug', 'is_public'];
+    protected $fillable = ['organization_id', 'name', 'slug', 'is_public'];
 
     protected $casts = ['is_public' => 'boolean'];
+
+    public function organization()
+    {
+        return $this->belongsTo(Organization::class);
+    }
 
     // Fill the slug from the name on create, like Django's save() override.
     protected static function booted(): void

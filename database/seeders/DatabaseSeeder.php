@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Board;
+use App\Models\Organization;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -21,7 +21,13 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Alice', 'password' => 'demo12345']
         );
 
-        $board = Board::firstOrCreate(['slug' => 'feature-requests'], ['name' => 'Feature Requests']);
+        $org = Organization::firstOrCreate(
+            ['slug' => 'demo-workspace'],
+            ['name' => 'Demo Workspace', 'owner_id' => $demo->id]
+        );
+        $org->memberships()->firstOrCreate(['user_id' => $demo->id], ['role' => 'owner']);
+
+        $board = $org->boards()->firstOrCreate(['slug' => 'feature-requests'], ['name' => 'Feature Requests']);
 
         $posts = [
             ['title' => 'Dark mode', 'body' => 'Please add a dark theme.', 'status' => 'planned'],
@@ -43,6 +49,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        $this->command->info('Seeded '.User::count().' users, '.Board::count().' board, '.Post::count().' posts.');
+        $this->command->info('Seeded '.User::count().' users, '.Organization::count().' org, '.Post::count().' posts.');
     }
 }

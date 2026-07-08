@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('boards', function (Blueprint $table) {
+        Schema::create('memberships', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
-            $table->string('name');
-            $table->string('slug');
-            $table->boolean('is_public')->default(true);
+            $table->string('role')->default('member');
             $table->timestamps();
-            $table->unique(['organization_id', 'slug']); // slug unique per tenant
+            $table->unique(['user_id', 'organization_id']);
         });
     }
 
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('boards');
+        Schema::dropIfExists('memberships');
     }
 };

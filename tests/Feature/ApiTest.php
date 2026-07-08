@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Board;
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -12,9 +13,24 @@ class ApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    // A user who owns and belongs to a personal organization.
     private function user(): User
     {
-        return User::create(['name' => 'Jorge', 'email' => 'jorge@example.com', 'password' => 'secret123']);
+        $user = User::create(['name' => 'Jorge', 'email' => 'jorge@example.com', 'password' => 'secret123']);
+        $org = Organization::create(['name' => 'Acme', 'owner_id' => $user->id]);
+        $org->memberships()->create(['user_id' => $user->id, 'role' => 'owner']);
+
+        return $user;
+    }
+
+    private function board(string $name = 'Feature Requests', bool $public = true): Board
+    {
+        $org = Organization::first() ?? Organization::create([
+            'name' => 'Acme',
+            'owner_id' => User::create(['name' => 'O', 'email' => 'o@example.com', 'password' => 'secret123'])->id,
+        ]);
+
+        return $org->boards()->create(['name' => $name, 'is_public' => $public]);
     }
 
     public function test_register_returns_a_token(): void
@@ -22,6 +38,18 @@ class ApiTest extends TestCase
         $res = $this->postJson('/api/register', ['email' => 'new@example.com', 'password' => 'secret123']);
         $res->assertCreated();
         $this->assertNotEmpty($res->json('token'));
+    }
+
+    public function test_register_creates_a_personal_organization(): void
+    {
+        $this->postJson('/api/register', ['email' => 'founder@example.com', 'password' => 'secret123'])
+            ->assertCreated();
+
+        $user = User::where('email', 'founder@example.com')->first();
+        $org = $user->organizations()->first();
+        $this->assertNotNull($org);
+        $this->assertSame($user->id, $org->owner_id);
+        $this->assertSame('owner', $user->memberships()->first()->role);
     }
 
     public function test_login_rejects_a_wrong_password(): void
@@ -38,17 +66,33 @@ class ApiTest extends TestCase
 
     public function test_boards_lists_only_public_boards(): void
     {
-        Board::create(['name' => 'Feature Requests']);
-        Board::create(['name' => 'Internal', 'is_public' => false]);
+        $this->board('Feature Requests', true);
+        $this->board('Internal', false);
 
         $slugs = collect($this->getJson('/api/boards')->assertOk()->json())->pluck('slug');
         $this->assertContains('feature-requests', $slugs);
         $this->assertNotContains('internal', $slugs);
     }
 
+    public function test_creating_a_board_requires_auth(): void
+    {
+        $this->postJson('/api/boards', ['name' => 'Nope'])->assertUnauthorized();
+    }
+
+    public function test_creating_a_board_under_the_users_organization(): void
+    {
+        $user = $this->user();
+        Sanctum::actingAs($user);
+
+        $res = $this->postJson('/api/boards', ['name' => 'Bugs']);
+        $res->assertCreated()
+            ->assertJsonPath('slug', 'bugs')
+            ->assertJsonPath('organization_id', $user->organizations()->first()->id);
+    }
+
     public function test_creating_a_post_requires_auth(): void
     {
-        $board = Board::create(['name' => 'Feature Requests']);
+        $board = $this->board();
         $this->postJson('/api/posts', ['board_id' => $board->id, 'title' => 'Nope'])
             ->assertUnauthorized();
     }
@@ -56,7 +100,7 @@ class ApiTest extends TestCase
     public function test_creating_a_post_records_the_author(): void
     {
         Sanctum::actingAs($this->user());
-        $board = Board::create(['name' => 'Feature Requests']);
+        $board = $this->board();
 
         $res = $this->postJson('/api/posts', ['board_id' => $board->id, 'title' => 'Webhooks']);
         $res->assertCreated()
@@ -68,8 +112,7 @@ class ApiTest extends TestCase
     {
         $user = $this->user();
         Sanctum::actingAs($user);
-        $board = Board::create(['name' => 'B']);
-        $post = $board->posts()->create(['title' => 'X', 'author_id' => $user->id]);
+        $post = $this->board()->posts()->create(['title' => 'X', 'author_id' => $user->id]);
 
         $this->postJson("/api/posts/{$post->id}/vote")
             ->assertOk()->assertJson(['voted' => true, 'vote_count' => 1]);
@@ -80,8 +123,7 @@ class ApiTest extends TestCase
     public function test_comments_filter_and_bump_count(): void
     {
         $user = $this->user();
-        $board = Board::create(['name' => 'B']);
-        $post = $board->posts()->create(['title' => 'X', 'author_id' => $user->id]);
+        $post = $this->board()->posts()->create(['title' => 'X', 'author_id' => $user->id]);
         $post->comments()->create(['body' => 'first', 'author_id' => $user->id]);
 
         $this->getJson("/api/comments?post={$post->id}")

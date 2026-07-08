@@ -20,6 +20,7 @@ Route::get('/comments', [CommentController::class, 'index']);
 // Writes require a Sanctum token (Authorization: Bearer <token>).
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/boards', [BoardController::class, 'store']);
     Route::post('/posts', [PostController::class, 'store']);
     Route::post('/posts/{post}/vote', [PostController::class, 'vote']);
     Route::post('/comments', [CommentController::class, 'store']);

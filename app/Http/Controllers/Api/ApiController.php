@@ -19,6 +19,7 @@ abstract class ApiController extends Controller
             'name' => $board->name,
             'slug' => $board->slug,
             'is_public' => $board->is_public,
+            'organization_id' => $board->organization_id,
         ];
     }
 

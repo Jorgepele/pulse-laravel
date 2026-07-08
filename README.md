@@ -31,9 +31,12 @@ router, artisan, Sanctum) y lo comparo con Django y Rails.
 
 ## What it does so far · Qué hace por ahora
 
-- Domain model: **User, Board → Post → Vote → Comment**, with an auto-generated
-  slug on boards, a default `open` status on posts, and `vote_count` /
-  `comment_count` on each post.
+- **Multi-tenant** domain: **Organization → Board → Post → Vote → Comment**,
+  with users joined to organizations through **memberships** (owner/admin/member).
+  Signing up creates your personal organization; boards belong to an org and
+  their slug is unique per org.
+- Auto-generated slug on boards and orgs, a default `open` status on posts, and
+  `vote_count` / `comment_count` on each post.
 - **Token authentication with Laravel Sanctum**: `register` / `login` / `me`
   endpoints returning a personal access token.
 - JSON REST API under `/api` to list public boards, list/create posts,
@@ -41,10 +44,10 @@ router, artisan, Sanctum) y lo comparo con Django y Rails.
   comments. Reads are public; **writes require a token** and are attributed to
   the current user.
 - Seed data (`php artisan db:seed`) so the API has something to show.
-- Feature tests (10 tests) run in memory against the real routes.
+- Feature tests (13 tests) run in memory against the real routes.
 
-The multi-tenant Organization model from the Django version is not ported yet —
-boards are global rather than owned by an organization.
+This now covers the full Django domain, including the multi-tenant core
+(organizations + memberships).
 
 ## How MVC maps across frameworks · Cómo se traslada el MVC
 
@@ -85,6 +88,7 @@ from `register` or `login`.
 | `GET`  | `/api/me` | token | The current user |
 | `GET`  | `/api/boards` | — | List public boards |
 | `GET`  | `/api/boards/{id}` | — | A single board |
+| `POST` | `/api/boards` | token | Create a board under your organization |
 | `GET`  | `/api/posts?board_id={id}` | — | List posts (optionally by board) |
 | `POST` | `/api/posts` | token | Create a feature request |
 | `POST` | `/api/posts/{id}/vote` | token | Toggle your vote |
@@ -102,8 +106,7 @@ Both run on every push via GitHub Actions (see the CI badge above).
 
 ## Ideas for next steps · Siguientes pasos
 
-Port the multi-tenant Organization model (boards owned by an org) and deploy a
-live demo.
+Deploy a live demo, and scope board listing to the organizations you belong to.
 
 ---
 
