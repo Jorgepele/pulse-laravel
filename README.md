@@ -46,8 +46,45 @@ router, artisan, Sanctum) y lo comparo con Django y Rails.
 - Seed data (`php artisan db:seed`) so the API has something to show.
 - Feature tests (13 tests) run in memory against the real routes.
 
-This now covers the full Django domain, including the multi-tenant core
-(organizations + memberships).
+This now covers the core Django domain, including the multi-tenant part
+(organizations + memberships). The billing tables from the Django version
+aren't ported here.
+
+## Data model · Modelo de datos
+
+The same multi-tenant feedback schema as the Django original, expressed here
+with Eloquent models. Every board and post belongs to an organization; users
+join organizations through memberships.
+
+```mermaid
+erDiagram
+    User ||--o{ Organization : owns
+    User ||--o{ Membership : "joins via"
+    Organization ||--o{ Membership : has
+    Organization ||--o{ Board : owns
+    Board ||--o{ Post : contains
+    User ||--o{ Post : authors
+    Post ||--o{ Vote : receives
+    User ||--o{ Vote : casts
+    Post ||--o{ Comment : has
+    User ||--o{ Comment : writes
+
+    Organization {
+        string name
+        string slug
+    }
+    Membership {
+        string role "owner / admin / member"
+    }
+    Board {
+        string name
+        bool is_public
+    }
+    Post {
+        string title
+        string status "open / planned / done ..."
+    }
+```
 
 ## How MVC maps across frameworks · Cómo se traslada el MVC
 
