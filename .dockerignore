@@ -1,0 +1,13 @@
+# Keep the build context small and free of local/dev state.
+.git
+.github
+vendor
+node_modules
+.env
+.env.*
+database/*.sqlite
+storage/logs/*
+bootstrap/cache/*.php
+tests
+README.md
+DEPLOY.md

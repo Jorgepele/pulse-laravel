@@ -104,9 +104,14 @@ vendor/bin/pint --test  # code style (Laravel Pint)
 
 Both run on every push via GitHub Actions (see the CI badge above).
 
+## Deploy · Despliegue
+
+Ready to deploy to Render (Docker). See [DEPLOY.md](DEPLOY.md) for the
+walkthrough. The live URL will go here once it's up.
+
 ## Ideas for next steps · Siguientes pasos
 
-Deploy a live demo, and scope board listing to the organizations you belong to.
+Scope board listing to the organizations you belong to.
 
 ---
 

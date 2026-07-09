@@ -1,0 +1,19 @@
+# Render blueprint for pulse-laravel.
+# In the Render dashboard: New > Blueprint, connect this repo, and Render reads
+# this file. Render has no native PHP runtime, so this service is built from the
+# Dockerfile. See DEPLOY.md for the full walkthrough.
+services:
+  - type: web
+    name: pulse-laravel
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      # Laravel's app encryption key. It must be a `base64:...` value, so Render
+      # can't generate it for you — set it yourself (see DEPLOY.md).
+      - key: APP_KEY
+        sync: false
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
