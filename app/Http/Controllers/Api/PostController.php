@@ -8,12 +8,15 @@ use Illuminate\Validation\Rule;
 
 class PostController extends ApiController
 {
-    // GET /api/posts  (optionally ?board_id=)
+    // GET /api/posts  (optionally ?board_id= and/or ?status=)
     public function index(Request $request)
     {
         $posts = Post::query()->latest();
         if ($request->filled('board_id')) {
             $posts->where('board_id', $request->query('board_id'));
+        }
+        if ($request->filled('status')) {
+            $posts->where('status', $request->query('status'));
         }
 
         return response()->json($posts->get()->map(fn (Post $p) => $this->postData($p)));

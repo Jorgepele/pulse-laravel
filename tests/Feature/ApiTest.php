@@ -108,6 +108,18 @@ class ApiTest extends TestCase
             ->assertJsonPath('author', 'jorge@example.com');
     }
 
+    public function test_posts_filter_by_status(): void
+    {
+        $user = $this->user();
+        $board = $this->board();
+        $board->posts()->create(['title' => 'Planned one', 'author_id' => $user->id, 'status' => 'planned']);
+        $board->posts()->create(['title' => 'Open one', 'author_id' => $user->id, 'status' => 'open']);
+
+        $titles = collect($this->getJson('/api/posts?status=planned')->assertOk()->json())->pluck('title');
+        $this->assertContains('Planned one', $titles);
+        $this->assertNotContains('Open one', $titles);
+    }
+
     public function test_vote_toggles(): void
     {
         $user = $this->user();

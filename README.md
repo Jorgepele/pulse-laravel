@@ -126,7 +126,7 @@ from `register` or `login`.
 | `GET`  | `/api/boards` | — | List public boards |
 | `GET`  | `/api/boards/{id}` | — | A single board |
 | `POST` | `/api/boards` | token | Create a board under your organization |
-| `GET`  | `/api/posts?board_id={id}` | — | List posts (optionally by board) |
+| `GET`  | `/api/posts?board_id={id}&status={status}` | — | List posts, filtered by board and/or status |
 | `POST` | `/api/posts` | token | Create a feature request |
 | `POST` | `/api/posts/{id}/vote` | token | Toggle your vote |
 | `GET`  | `/api/comments?post={id}` | — | List comments on a post |
