@@ -47,8 +47,10 @@ abstract class ApiController extends Controller
             'title' => $post->title,
             'body' => $post->body,
             'status' => $post->status,
-            'vote_count' => $post->votes()->count(),
-            'comment_count' => $post->comments()->count(),
+            // Use the counts loaded by `withCount` when they are there; a single
+            // post (show/store) has none, and pays one query each.
+            'vote_count' => $post->votes_count ?? $post->votes()->count(),
+            'comment_count' => $post->comments_count ?? $post->comments()->count(),
             'author' => $post->author?->email,
             'created_at' => $post->created_at,
         ];

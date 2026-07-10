@@ -11,7 +11,12 @@ class PostController extends ApiController
     // GET /api/posts  (optionally ?board_id= and/or ?status=)
     public function index(Request $request)
     {
-        $posts = $this->visiblePosts($request)->latest();
+        // `with` + `withCount` let the database do the counting in the same query,
+        // instead of one query per post while serializing (the N+1 problem).
+        $posts = $this->visiblePosts($request)
+            ->with('author')
+            ->withCount(['votes', 'comments'])
+            ->latest();
         if ($request->filled('board_id')) {
             $posts->where('board_id', $request->query('board_id'));
         }
