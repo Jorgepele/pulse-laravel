@@ -11,7 +11,7 @@ class PostController extends ApiController
     // GET /api/posts  (optionally ?board_id= and/or ?status=)
     public function index(Request $request)
     {
-        $posts = Post::query()->latest();
+        $posts = $this->visiblePosts($request)->latest();
         if ($request->filled('board_id')) {
             $posts->where('board_id', $request->query('board_id'));
         }
@@ -23,12 +23,14 @@ class PostController extends ApiController
     }
 
     // GET /api/posts/{post}
-    public function show(Post $post)
+    public function show(Request $request, Post $post)
     {
+        abort_unless($this->visiblePosts($request)->whereKey($post->id)->exists(), 404);
+
         return response()->json($this->postData($post));
     }
 
-    // POST /api/posts  (auth required)
+    // POST /api/posts  (auth required) — only on a board the user can see.
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -37,6 +39,7 @@ class PostController extends ApiController
             'body' => ['nullable', 'string'],
             'status' => ['sometimes', Rule::in(Post::STATUSES)],
         ]);
+        abort_unless($this->visibleBoards($request)->whereKey($data['board_id'])->exists(), 404);
         $data['author_id'] = $request->user()->id;
 
         $post = Post::create($data);
@@ -47,6 +50,8 @@ class PostController extends ApiController
     // POST /api/posts/{post}/vote  (auth required) — toggle the user's vote
     public function vote(Request $request, Post $post)
     {
+        abort_unless($this->visiblePosts($request)->whereKey($post->id)->exists(), 404);
+
         $existing = $post->votes()->where('user_id', $request->user()->id)->first();
 
         if ($existing) {

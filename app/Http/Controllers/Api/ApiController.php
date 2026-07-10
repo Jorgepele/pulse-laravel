@@ -7,11 +7,27 @@ use App\Models\Board;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 
 // Base for the JSON API. Small hand-written serializers keep the JSON shape
 // explicit and matching the Django/Rails versions of Pulse.
 abstract class ApiController extends Controller
 {
+    // Every read goes through here: the boards the caller is allowed to see.
+    // Reads are not behind `auth:sanctum`, so the guard is named explicitly —
+    // `$request->user()` alone would be null even with a valid bearer token.
+    protected function visibleBoards(Request $request): Builder
+    {
+        return Board::visibleTo($request->user('sanctum'));
+    }
+
+    // Posts inherit their board's visibility.
+    protected function visiblePosts(Request $request): Builder
+    {
+        return Post::whereIn('board_id', $this->visibleBoards($request)->select('id'));
+    }
+
     protected function boardData(Board $board): array
     {
         return [

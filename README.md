@@ -39,7 +39,10 @@ router, artisan, Sanctum) y lo comparo con Django y Rails.
   `vote_count` / `comment_count` on each post.
 - **Token authentication with Laravel Sanctum**: `register` / `login` / `me`
   endpoints returning a personal access token.
-- JSON REST API under `/api` to list public boards, list/create posts,
+- **Tenant scoping**: a board is visible if it is public, or if you belong to the
+  organization that owns it; posts and comments inherit their board's visibility.
+  The rule lives in the `Board::scopeVisibleTo` scope, a port of Django's `visible_to`.
+- JSON REST API under `/api` to list visible boards, list/create posts,
   **toggle an upvote** (vote once, vote again to remove it), and list/add
   comments. Reads are public; **writes require a token** and are attributed to
   the current user.
@@ -123,7 +126,7 @@ from `register` or `login`.
 | `POST` | `/api/register` | — | Create an account, returns a token |
 | `POST` | `/api/login` | — | Exchange email + password for a token |
 | `GET`  | `/api/me` | token | The current user |
-| `GET`  | `/api/boards` | — | List public boards |
+| `GET`  | `/api/boards` | — | List boards visible to the caller |
 | `GET`  | `/api/boards/{id}` | — | A single board |
 | `POST` | `/api/boards` | token | Create a board under your organization |
 | `GET`  | `/api/posts?board_id={id}&status={status}` | — | List posts, filtered by board and/or status |

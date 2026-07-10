@@ -8,16 +8,18 @@ use Illuminate\Http\Request;
 class BoardController extends ApiController
 {
     // GET /api/boards
-    public function index()
+    public function index(Request $request)
     {
-        $boards = Board::where('is_public', true)->orderBy('name')->get();
+        $boards = $this->visibleBoards($request)->orderBy('name')->get();
 
         return response()->json($boards->map(fn (Board $b) => $this->boardData($b)));
     }
 
     // GET /api/boards/{board}
-    public function show(Board $board)
+    public function show(Request $request, Board $board)
     {
+        abort_unless($this->visibleBoards($request)->whereKey($board->id)->exists(), 404);
+
         return response()->json($this->boardData($board));
     }
 
